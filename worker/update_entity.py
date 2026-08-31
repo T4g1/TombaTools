@@ -1,7 +1,5 @@
-from PySide6.QtNetwork import QUdpSocket
-
 from worker import AbstractWorker
-from connector.retroarch import RetroArch
+from connector.emulator import get_emulator_implementation
 from common import logger
 from game.entity import Entity
 
@@ -17,8 +15,7 @@ class UpdateEntity(AbstractWorker):
         self.working = True
 
         try:
-            socket = QUdpSocket()
-            self.psx = RetroArch(address="127.0.0.1", port=55355, socket=socket)
+            self.psx = get_emulator_implementation()(address="127.0.0.1", port=55355)
             self.psx.connect()
 
             logger.info(f"Updating entity at 0x{self.entity.address:08X}")

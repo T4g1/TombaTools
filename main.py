@@ -59,17 +59,16 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.vram_worker = VRAMWorker()
         self.vram_worker.signals.vram_loaded.connect(self.on_vram_loaded)
+        self.vram_worker.setAutoDelete(False)
 
     def on_vram_loaded(self, pixels: Pixels):
-        WIDTH = 1024
-
         raw_bytes = bytearray(
             value
             for pixel in pixels.data
             for value in (pixel.r, pixel.g, pixel.b, pixel.a)
         )
 
-        bytes_per_line = WIDTH * 4
+        bytes_per_line = pixels.width * 4
         image = QImage(
             raw_bytes,
             pixels.width,
@@ -82,7 +81,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.ui.vram.setPixmap(pixmap)
 
     def on_action_connect(self):
-        self.start_discover_entities()
+        # self.start_discover_entities()
         self.start_load_vram()
 
     def start_load_vram(self):

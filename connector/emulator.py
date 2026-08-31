@@ -3,6 +3,9 @@ from enum import Enum
 
 from common import logger
 
+EMULATOR = "bizhawk"
+# EMULATOR = "retroarch"
+
 
 class EmulatorException(Exception):
     pass
@@ -40,7 +43,7 @@ class MemoryBank:
         self.size = len(data)
         self.data = data
 
-    def read(self, address: int, size: int = 1) -> bytearray | None:
+    def read(self, address: int, size: int = 1, domain: str = "") -> bytearray | None:
         if address < self.address or address + size > self.address + self.size:
             return None
 
@@ -60,13 +63,17 @@ class Emulator:
         self.address = address
         self.port = port
 
-    def write_memory(self, address, bytes: bytearray | bytes):
+    def write_memory(self, address, bytes: bytearray | bytes, domain: str = ""):
         """Abstract"""
         pass
 
-    def _read_memory(self, address, size=1):
+    def _read_memory(self, address, size=1, domain: str = ""):
         """Abstract"""
         return bytearray(1)
+
+    def prepare(self, timeout_ms: int = 1000) -> bool:
+        """Abstract"""
+        return True
 
     def disconnect(self):
         """Abstract"""
@@ -80,14 +87,14 @@ class Emulator:
         """Abstract"""
         return (EmulatorStatus.UNKNOWN, "", "", "")
 
-    def connect(self, timeout: float = 5):
+    def connect(self, timeout: float = 5) -> bool:
         logger.info(f"Connecting to {self.name}...")
 
         start_time = time.time()
-        timeout = 5.0
 
         self.connected = False
-        while not self.connected and time.time() - start_time < timeout / 1000.0:
+        prepared = self.prepare()
+        while prepared and not self.connected and time.time() - start_time < timeout:
             try:
                 version = self.get_version()
                 status, core_type, rom_name, _ = self.get_status()
@@ -106,7 +113,9 @@ class Emulator:
                 f"Connected to {self.name} version {version} running {rom_name}"
             )
         else:
-            logger.error("Unable to connect to RetroArch")
+            raise EmulatorDisconnectError("Unable to connect to RetroArch")
+
+        return self.connected
 
     def create_cache(self, address: int, size: int = 1):
         """Put a memory bank in cache
@@ -117,22 +126,33 @@ class Emulator:
     def destroy_cache(self):
         self.cache = []
 
-    def read_memory(self, address: int, size: int = 1) -> bytearray:
+    def read_memory(self, address: int, size: int = 1, domain: str = "") -> bytearray:
         """Performs a cached read"""
         for memory_bank in self.cache:
-            data = memory_bank.read(address, size)
+            data = memory_bank.read(address, size, domain)
 
             if data is not None:
                 return data
 
-        return self._read_memory(address, size)
+        return self._read_memory(address, size, domain)
 
-    def read_memory_block(self, address: int, size: int) -> bytearray:
+    def read_memory_block(self, address: int, size: int, domain: str = "") -> bytearray:
         block = bytearray()
         remaining_size = size
         while remaining_size:
-            chunk = self.read_memory(address + len(block), remaining_size)
+            chunk = self.read_memory(address + len(block), remaining_size, domain)
             remaining_size -= len(chunk)
             block += chunk
 
         return block
+
+
+def get_emulator_implementation() -> type[Emulator]:
+    if EMULATOR == "retroarch":
+        from connector.retroarch import RetroArch
+
+        return RetroArch
+
+    from connector.bizhawk import BizHawk
+
+    return BizHawk

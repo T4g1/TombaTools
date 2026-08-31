@@ -21,11 +21,10 @@ def status_from_string(value):
 class RetroArch(Emulator):
     name: str = "RetroArch"
 
-    def __init__(self, address, port, socket: QUdpSocket) -> None:
+    def __init__(self, address, port) -> None:
         super().__init__(address=address, port=port)
 
-        self.socket = socket
-
+        self.socket = QUdpSocket()
         self.socket.errorOccurred.connect(self.socket_error)
 
     @Slot(QUdpSocket.SocketError)
