@@ -4,7 +4,7 @@ from connector.emulator import Emulator
 from signals import EntitySignals
 
 
-class EntityWorker(QRunnable):
+class AbstractWorker(QRunnable):
     psx: Emulator
     signals: EntitySignals
 
@@ -21,3 +21,6 @@ class EntityWorker(QRunnable):
 
     def run(self):
         pass
+
+    def kill(self):
+        self.working = False

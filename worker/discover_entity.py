@@ -1,7 +1,7 @@
 from PySide6.QtNetwork import QUdpSocket
 
-from worker import EntityWorker
-from connector.emulator import Emulator
+from worker import AbstractWorker
+from connector.retroarch import RetroArch
 from common import logger
 from game.entity import (
     Entity,
@@ -14,13 +14,13 @@ from game.entity import (
 )
 
 
-class DiscoverEntityWorker(EntityWorker):
+class DiscoverEntityWorker(AbstractWorker):
     def run(self):
         self.working = True
 
         try:
             socket = QUdpSocket()
-            self.psx = Emulator(address="127.0.0.1", port=55355, socket=socket)
+            self.psx = RetroArch(address="127.0.0.1", port=55355, socket=socket)
             self.psx.connect()
 
             logger.info("Loading entities...")
@@ -31,6 +31,9 @@ class DiscoverEntityWorker(EntityWorker):
             logger.error(exception)
         finally:
             self.psx.disconnect()
+
+        if not self.working:
+            return
 
         logger.info("Finished loading entities")
         self.working = False
@@ -45,6 +48,9 @@ class DiscoverEntityWorker(EntityWorker):
     ) -> list[Entity]:
         entities = []
         for _ in range(count):
+            if not self.working:
+                break
+
             address = address + size
             entity_raw = self.psx.read_memory_block(address, size)
             entity = Entity(address)

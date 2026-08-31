@@ -45,14 +45,17 @@ from PySide6.QtWidgets import (
     QApplication,
     QHBoxLayout,
     QHeaderView,
+    QLabel,
     QMainWindow,
     QMenu,
     QMenuBar,
     QSizePolicy,
+    QSpacerItem,
     QStatusBar,
     QTabWidget,
     QTableView,
     QTextEdit,
+    QVBoxLayout,
     QWidget,
 )
 
@@ -81,7 +84,34 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout.addWidget(self.entitiesTableView)
 
+        self.entity_viewer = QWidget(self.tab_entities)
+        self.entity_viewer.setObjectName("entity_viewer")
+        self.verticalLayout_2 = QVBoxLayout(self.entity_viewer)
+        self.verticalLayout_2.setObjectName("verticalLayout_2")
+        self.entity_sprite = QLabel(self.entity_viewer)
+        self.entity_sprite.setObjectName("entity_sprite")
+
+        self.verticalLayout_2.addWidget(self.entity_sprite)
+
+        self.verticalSpacer = QSpacerItem(
+            20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding
+        )
+
+        self.verticalLayout_2.addItem(self.verticalSpacer)
+
+        self.horizontalLayout.addWidget(self.entity_viewer)
+
         self.tabWidget.addTab(self.tab_entities, "")
+        self.tab_vram = QWidget()
+        self.tab_vram.setObjectName("tab_vram")
+        self.verticalLayout = QVBoxLayout(self.tab_vram)
+        self.verticalLayout.setObjectName("verticalLayout")
+        self.vram = QLabel(self.tab_vram)
+        self.vram.setObjectName("vram")
+
+        self.verticalLayout.addWidget(self.vram)
+
+        self.tabWidget.addTab(self.tab_vram, "")
         self.tab_transitions = QWidget()
         self.tab_transitions.setObjectName("tab_transitions")
         self.tabWidget.addTab(self.tab_transitions, "")
@@ -130,9 +160,15 @@ class Ui_MainWindow(object):
             QCoreApplication.translate("MainWindow", "Connect", None)
         )
         self.actionQuit.setText(QCoreApplication.translate("MainWindow", "Quit", None))
+        self.entity_sprite.setText("")
         self.tabWidget.setTabText(
             self.tabWidget.indexOf(self.tab_entities),
             QCoreApplication.translate("MainWindow", "Entities", None),
+        )
+        self.vram.setText("")
+        self.tabWidget.setTabText(
+            self.tabWidget.indexOf(self.tab_vram),
+            QCoreApplication.translate("MainWindow", "VRAM", None),
         )
         self.tabWidget.setTabText(
             self.tabWidget.indexOf(self.tab_transitions),

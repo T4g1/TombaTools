@@ -1,12 +1,37 @@
 from PySide6 import QtCore
 from PySide6.QtCore import Qt, QModelIndex
+from enum import IntEnum
 
 from game.entity import Entity
 from signals import EntitySignals
 
 
+class Columns(IntEnum):
+    ACTIVE = 0
+    PARAM_1 = 1
+    PARAM_2 = 2
+    INITIALIZED = 3
+    STATUS = 4
+    RAW = 5
+    TEXT_X_START = 6
+    TEXT_X_END = 7
+    TEXT_Y_START = 8
+    TEXT_Y_END = 9
+
+
 class EntityTableModel(QtCore.QAbstractTableModel):
-    COLUMNS = ["Active", "Param 1", "Param 2"]
+    COLUMNS = {
+        Columns.ACTIVE: "Active",
+        Columns.INITIALIZED: "Initialized",
+        Columns.PARAM_1: "Param 1",
+        Columns.PARAM_2: "Param 2",
+        Columns.STATUS: "Status",
+        Columns.TEXT_X_START: "Texture X start",
+        Columns.TEXT_X_END: "Texture X end",
+        Columns.TEXT_Y_START: "Texture Y start",
+        Columns.TEXT_Y_END: "Texture Y end",
+        Columns.RAW: "Raw",
+    }
 
     entities: list[Entity]
     signals: EntitySignals
@@ -25,7 +50,7 @@ class EntityTableModel(QtCore.QAbstractTableModel):
         return len(self.entities)
 
     def columnCount(self, index=QtCore.QModelIndex()):
-        return len(self.COLUMNS)
+        return len(self.COLUMNS.keys())
 
     def addRow(self, entity: Entity):
         self.entities.append(entity)
@@ -58,12 +83,26 @@ class EntityTableModel(QtCore.QAbstractTableModel):
                 )
 
         if role == Qt.ItemDataRole.DisplayRole:
-            if index.column() == 0:
-                return entity.occupied
-            elif index.column() == 1:
-                return entity.param_1
-            elif index.column() == 2:
-                return entity.param_2
+            if index.column() == Columns.ACTIVE:
+                return f"0x{entity.occupied:02X}"
+            elif index.column() == Columns.PARAM_1:
+                return f"0x{entity.param_1:02X}"
+            elif index.column() == Columns.PARAM_2:
+                return f"0x{entity.param_2:02X}"
+            elif index.column() == Columns.INITIALIZED:
+                return f"0x{entity.initialized:02X}"
+            elif index.column() == Columns.STATUS:
+                return f"0x{entity.status:02X}"
+            elif index.column() == Columns.RAW:
+                return entity.raw.hex()
+            elif index.column() == Columns.TEXT_X_START:
+                return f"0x{entity.texture_x_start:08X}"
+            elif index.column() == Columns.TEXT_Y_START:
+                return f"0x{entity.texture_y_start:08X}"
+            elif index.column() == Columns.TEXT_X_END:
+                return f"0x{entity.texture_x_end:08X}"
+            elif index.column() == Columns.TEXT_Y_END:
+                return f"0x{entity.texture_y_end:08X}"
 
         if role == Qt.ItemDataRole.UserRole:
             return entity
