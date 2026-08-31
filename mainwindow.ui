@@ -14,7 +14,7 @@
    <string>Tomba! Tools</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QVBoxLayout" name="verticalLayout_5">
+   <layout class="QHBoxLayout" name="horizontalLayout_2">
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
@@ -26,7 +26,7 @@
        </attribute>
        <layout class="QHBoxLayout" name="horizontalLayout">
         <item>
-         <widget class="QListView" name="entitiesListView"/>
+         <widget class="QTableView" name="entitiesTableView"/>
         </item>
        </layout>
       </widget>
@@ -34,6 +34,16 @@
        <attribute name="title">
         <string>Transitions</string>
        </attribute>
+      </widget>
+      <widget class="QWidget" name="tab_log">
+       <attribute name="title">
+        <string>Log</string>
+       </attribute>
+       <layout class="QHBoxLayout" name="horizontalLayout_3">
+        <item>
+         <widget class="QTextEdit" name="logTextBox"/>
+        </item>
+       </layout>
       </widget>
      </widget>
     </item>
