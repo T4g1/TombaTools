@@ -135,7 +135,7 @@ class Entity:
         return value
 
     def to_bytearray(self) -> bytearray:
-        data = bytearray(Entity.SIZE)
+        data = self.raw
         data[0x00] = self.occupied
         data[0x01] = self.initialized
         data[0x02] = self.param_1
