@@ -18,7 +18,7 @@
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <widget class="QWidget" name="tab_entities">
        <attribute name="title">
@@ -62,11 +62,77 @@
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout">
         <item>
-         <widget class="QLabel" name="vram">
-          <property name="text">
-           <string/>
-          </property>
-         </widget>
+         <layout class="QHBoxLayout" name="vram_menu">
+          <item>
+           <widget class="QLabel" name="label">
+            <property name="text">
+             <string>Color mode:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="mode">
+            <item>
+             <property name="text">
+              <string>16bit Texture (Direct Color)</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>8bit Texture (256 Color Palette)</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>4bit Texture (16 Color Palette)</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item>
+           <layout class="QVBoxLayout" name="clut_layout">
+            <item>
+             <layout class="QHBoxLayout" name="clut_x_layout">
+              <item>
+               <widget class="QLabel" name="clut_x_label">
+                <property name="text">
+                 <string>CLUT X:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QSpinBox" name="clut_x">
+                <property name="maximum">
+                 <number>2048</number>
+                </property>
+                <property name="singleStep">
+                 <number>16</number>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="clut_y_layout">
+              <item>
+               <widget class="QLabel" name="clut_y_label">
+                <property name="text">
+                 <string>CLUT Y</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QSpinBox" name="clut_y">
+                <property name="maximum">
+                 <number>511</number>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </item>
+         </layout>
         </item>
        </layout>
       </widget>

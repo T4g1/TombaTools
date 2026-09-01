@@ -12,11 +12,13 @@ class Columns(IntEnum):
     PARAM_2 = 2
     INITIALIZED = 3
     STATUS = 4
-    RAW = 5
+    CLUT = 5
     TEXT_X_START = 6
     TEXT_X_END = 7
     TEXT_Y_START = 8
     TEXT_Y_END = 9
+    RAW = 10
+    ADDRESS = 11
 
 
 class EntityTableModel(QtCore.QAbstractTableModel):
@@ -31,6 +33,8 @@ class EntityTableModel(QtCore.QAbstractTableModel):
         Columns.TEXT_Y_START: "Texture Y start",
         Columns.TEXT_Y_END: "Texture Y end",
         Columns.RAW: "Raw",
+        Columns.CLUT: "CLUT",
+        Columns.ADDRESS: "Address",
     }
 
     entities: list[Entity]
@@ -83,6 +87,8 @@ class EntityTableModel(QtCore.QAbstractTableModel):
                 )
 
         if role == Qt.ItemDataRole.DisplayRole:
+            if index.column() == Columns.ADDRESS:
+                return f"0x{entity.address:08X}"
             if index.column() == Columns.ACTIVE:
                 return f"0x{entity.occupied:02X}"
             elif index.column() == Columns.PARAM_1:
@@ -103,6 +109,8 @@ class EntityTableModel(QtCore.QAbstractTableModel):
                 return f"0x{entity.texture_x_end:08X}"
             elif index.column() == Columns.TEXT_Y_END:
                 return f"0x{entity.texture_y_end:08X}"
+            elif index.column() == Columns.CLUT:
+                return f"0x{entity.clut:04X}"
 
         if role == Qt.ItemDataRole.UserRole:
             return entity

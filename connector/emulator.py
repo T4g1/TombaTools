@@ -87,6 +87,10 @@ class Emulator:
         """Abstract"""
         return (EmulatorStatus.UNKNOWN, "", "", "")
 
+    def ping(self):
+        """Abstract"""
+        return
+
     def connect(self, timeout: float = 5) -> bool:
         logger.info(f"Connecting to {self.name}...")
 

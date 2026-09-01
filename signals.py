@@ -1,6 +1,5 @@
-from PySide6.QtCore import Signal, QObject
+from PySide6.QtCore import Signal, QObject, QPointF
 from game.entity import Entity
-from game.vram import Pixels
 
 
 class EntitySignals(QObject):
@@ -9,4 +8,9 @@ class EntitySignals(QObject):
 
 
 class VRAMSignals(QObject):
-    vram_loaded = Signal(Pixels)
+    vram_loaded = Signal(bytearray)
+
+
+class VRAMHoverSignals(QObject):
+    mouse_moved = Signal(QPointF)
+    mouse_click = Signal(QPointF)

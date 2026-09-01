@@ -10,10 +10,10 @@ class AbstractWorker(QRunnable):
 
     working: bool
 
-    def __init__(self):
+    def __init__(self, psx: Emulator):
         super().__init__()
         self.signals = EntitySignals()
-
+        self.psx = psx
         self.working = False
 
     def is_working(self) -> bool:

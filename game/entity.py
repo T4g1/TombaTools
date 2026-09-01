@@ -24,6 +24,8 @@ class Entity:
     type: int
     ttl: int
 
+    clut: int
+
     raw: bytearray
 
     linked_entity: bytearray
@@ -65,6 +67,8 @@ class Entity:
         self.type = 0x00
         self.ttl = 0x00
 
+        self.clut = 0x00
+
         self.position_x = 0x00
         self.position_y = 0x00
         self.position_z = 0x00
@@ -95,7 +99,7 @@ class Entity:
         self.param_2 = raw[3]
         self.status = raw[4]
         self.step = raw[5]
-        self.type = read_int(raw, 0x08, TypeSize.HALF_WORD)
+        self.clut = read_int(raw, 0x08, TypeSize.HALF_WORD)
         self.flags = raw[0x0C:0x10]
         self.ttl = read_int(raw, 0x20, TypeSize.WORD)
 
@@ -124,7 +128,7 @@ class Entity:
         value += f"Param 1: {hex(self.param_1)}, "
         value += f"Param 2: {hex(self.param_2)}, "
         value += f"Status: {hex(self.status)}, "
-        value += f"Type: {hex(self.type)}, "
+        value += f"CLUT: {hex(self.clut)}, "
         value += f"TTL: 0x{self.addr_bc:04X}, "
         value += f"Flags: {self.flags.hex()}, "
         value += f"BC: 0x{self.addr_bc:04X}, "
@@ -142,7 +146,7 @@ class Entity:
         data[0x03] = self.param_2
         data[0x04] = self.status
         data[0x05] = self.step
-        data = write_int(data, 0x08, TypeSize.HALF_WORD, self.type)
+        data = write_int(data, 0x08, TypeSize.HALF_WORD, self.clut)
 
         data = write_int(data, 0x10, TypeSize.WORD, self.position_x)
         data = write_int(data, 0x14, TypeSize.WORD, self.position_y)

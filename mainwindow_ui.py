@@ -43,6 +43,7 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import (
     QApplication,
+    QComboBox,
     QHBoxLayout,
     QHeaderView,
     QLabel,
@@ -51,6 +52,7 @@ from PySide6.QtWidgets import (
     QMenuBar,
     QSizePolicy,
     QSpacerItem,
+    QSpinBox,
     QStatusBar,
     QTabWidget,
     QTableView,
@@ -106,10 +108,57 @@ class Ui_MainWindow(object):
         self.tab_vram.setObjectName("tab_vram")
         self.verticalLayout = QVBoxLayout(self.tab_vram)
         self.verticalLayout.setObjectName("verticalLayout")
-        self.vram = QLabel(self.tab_vram)
-        self.vram.setObjectName("vram")
+        self.vram_menu = QHBoxLayout()
+        self.vram_menu.setObjectName("vram_menu")
+        self.label = QLabel(self.tab_vram)
+        self.label.setObjectName("label")
 
-        self.verticalLayout.addWidget(self.vram)
+        self.vram_menu.addWidget(self.label)
+
+        self.mode = QComboBox(self.tab_vram)
+        self.mode.addItem("")
+        self.mode.addItem("")
+        self.mode.addItem("")
+        self.mode.setObjectName("mode")
+
+        self.vram_menu.addWidget(self.mode)
+
+        self.clut_layout = QVBoxLayout()
+        self.clut_layout.setObjectName("clut_layout")
+        self.clut_x_layout = QHBoxLayout()
+        self.clut_x_layout.setObjectName("clut_x_layout")
+        self.clut_x_label = QLabel(self.tab_vram)
+        self.clut_x_label.setObjectName("clut_x_label")
+
+        self.clut_x_layout.addWidget(self.clut_x_label)
+
+        self.clut_x = QSpinBox(self.tab_vram)
+        self.clut_x.setObjectName("clut_x")
+        self.clut_x.setMaximum(2048)
+        self.clut_x.setSingleStep(16)
+
+        self.clut_x_layout.addWidget(self.clut_x)
+
+        self.clut_layout.addLayout(self.clut_x_layout)
+
+        self.clut_y_layout = QHBoxLayout()
+        self.clut_y_layout.setObjectName("clut_y_layout")
+        self.clut_y_label = QLabel(self.tab_vram)
+        self.clut_y_label.setObjectName("clut_y_label")
+
+        self.clut_y_layout.addWidget(self.clut_y_label)
+
+        self.clut_y = QSpinBox(self.tab_vram)
+        self.clut_y.setObjectName("clut_y")
+        self.clut_y.setMaximum(511)
+
+        self.clut_y_layout.addWidget(self.clut_y)
+
+        self.clut_layout.addLayout(self.clut_y_layout)
+
+        self.vram_menu.addLayout(self.clut_layout)
+
+        self.verticalLayout.addLayout(self.vram_menu)
 
         self.tabWidget.addTab(self.tab_vram, "")
         self.tab_transitions = QWidget()
@@ -146,7 +195,7 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
 
-        self.tabWidget.setCurrentIndex(0)
+        self.tabWidget.setCurrentIndex(1)
 
         QMetaObject.connectSlotsByName(MainWindow)
 
@@ -165,7 +214,34 @@ class Ui_MainWindow(object):
             self.tabWidget.indexOf(self.tab_entities),
             QCoreApplication.translate("MainWindow", "Entities", None),
         )
-        self.vram.setText("")
+        self.label.setText(
+            QCoreApplication.translate("MainWindow", "Color mode:", None)
+        )
+        self.mode.setItemText(
+            0,
+            QCoreApplication.translate(
+                "MainWindow", "16bit Texture (Direct Color)", None
+            ),
+        )
+        self.mode.setItemText(
+            1,
+            QCoreApplication.translate(
+                "MainWindow", "8bit Texture (256 Color Palette)", None
+            ),
+        )
+        self.mode.setItemText(
+            2,
+            QCoreApplication.translate(
+                "MainWindow", "4bit Texture (16 Color Palette)", None
+            ),
+        )
+
+        self.clut_x_label.setText(
+            QCoreApplication.translate("MainWindow", "CLUT X:", None)
+        )
+        self.clut_y_label.setText(
+            QCoreApplication.translate("MainWindow", "CLUT Y", None)
+        )
         self.tabWidget.setTabText(
             self.tabWidget.indexOf(self.tab_vram),
             QCoreApplication.translate("MainWindow", "VRAM", None),
