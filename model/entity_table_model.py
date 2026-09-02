@@ -1,9 +1,8 @@
 from PySide6 import QtCore
-from PySide6.QtCore import Qt, QModelIndex
+from PySide6.QtCore import Qt, QModelIndex, Signal
 from enum import IntEnum
 
 from game.entity import Entity
-from signals import EntitySignals
 
 
 class Columns(IntEnum):
@@ -38,12 +37,12 @@ class EntityTableModel(QtCore.QAbstractTableModel):
     }
 
     entities: list[Entity]
-    signals: EntitySignals
+
+    entity_updated = Signal(Entity)
 
     def __init__(self, parent=None):
         super().__init__(parent)
         self.entities = []
-        self.signals = EntitySignals()
 
     def clear(self):
         self.beginRemoveRows(QModelIndex(), 0, len(self.entities) - 1)
@@ -126,7 +125,7 @@ class EntityTableModel(QtCore.QAbstractTableModel):
                 new_value = 0x01
 
             self.entities[index.row()].occupied = new_value
-            self.signals.entity_updated.emit(self.entities[index.row()])
+            self.entity_updated.emit(self.entities[index.row()])
 
             self.dataChanged.emit(index, index, [role])
             return True

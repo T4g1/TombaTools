@@ -25,15 +25,14 @@ class EmulatorWorker(QObject):
         super().__init__()
         self.address = address
         self.port = port
-        self.timer = None
+
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.ping)
 
     @Slot()
     def connect(self):
         self.psx = get_emulator_implementation()(address=self.address, port=self.port)
         self.psx.connect()
-
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.ping)
         self.timer.start(4000)
 
         self.connected.emit()

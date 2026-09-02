@@ -81,14 +81,25 @@ class VRAMZoomViewer(QGraphicsView):
         self.ui.clut_x.valueChanged.connect(self.on_clut_changed)
         self.ui.clut_y.valueChanged.connect(self.on_clut_changed)
 
+    def get_x_from_mode(self, x: int) -> int:
+        if self.mode is VRAMMode.DIRECT_COLOR:
+            return x * COLOR_SIZE
+        elif self.mode is VRAMMode.CLUT_256:
+            return x
+        elif self.mode is VRAMMode.CLUT_16:
+            return x // 2
+
+        return x
+
     def on_mouse_moved(self, position: QPointF):
-        self.ui.statusbar.showMessage(f"X:{int(position.x())} Y:{int(position.y())}")
+        x = self.get_x_from_mode(int(position.x()))
+        y = int(position.y())
+        self.ui.statusbar.showMessage(f"X:{x} Y:{y}")
 
     def on_mouse_click(self, position: QPointF):
-        if self.mode is VRAMMode.DIRECT_COLOR:
-            self.ui.clut_x.setValue(int(position.x()) * 2)
-            self.ui.clut_y.setValue(int(position.y()))
-            self.update_clut()
+        self.ui.clut_y.setValue(int(position.y()))
+        self.ui.clut_x.setValue(self.get_x_from_mode(int(position.x())))
+        self.update_clut()
 
     def on_clut_changed(self, _: int = 0):
         self.update_clut()

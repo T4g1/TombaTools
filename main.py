@@ -47,7 +47,7 @@ class MainWindow(QtWidgets.QMainWindow):
         self.loop = loop
 
         self.entity_model = EntityTableModel()
-        self.entity_model.signals.entity_updated.connect(self.on_entity_update)
+        self.entity_model.entity_updated.connect(self.on_entity_update)
         self.ui.entitiesTableView.setModel(self.entity_model)
 
         self.vram_zoom_viewer = VRAMZoomViewer(self.ui)
