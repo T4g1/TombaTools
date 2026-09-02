@@ -1,14 +1,10 @@
 from PySide6.QtWidgets import (
     QGraphicsView,
     QGraphicsScene,
-    QGraphicsPixmapItem,
-    QGraphicsSceneHoverEvent,
-    QGraphicsSceneMouseEvent,
 )
 from PySide6.QtCore import Qt, QPointF
 from PySide6.QtGui import QImage, QPixmap
 
-from signals import VRAMHoverSignals
 from game.vram import (
     VRAM_HEIGHT,
     BYTES_PER_LINE,
@@ -18,34 +14,12 @@ from game.vram import (
     VRAMMode,
     Pixel,
 )
-
+from model.pixmap_item import PixmapItem
 from mainwindow_ui import Ui_MainWindow
 
 
-class VRAMPixmapItem(QGraphicsPixmapItem):
-    signals: VRAMHoverSignals
-
-    def __init__(self, parent=None):
-        super().__init__(parent)
-
-        self.signals = VRAMHoverSignals()
-
-        self.setAcceptHoverEvents(True)
-
-    def hoverMoveEvent(self, event: QGraphicsSceneHoverEvent):
-        super().hoverMoveEvent(event)
-
-        self.signals.mouse_moved.emit(event.pos())
-
-    def mousePressEvent(self, event: QGraphicsSceneMouseEvent):
-        super().mousePressEvent(event)
-
-        if event.button() is Qt.MouseButton.RightButton:
-            self.signals.mouse_click.emit(event.pos())
-
-
 class VRAMZoomViewer(QGraphicsView):
-    pixmap_item: VRAMPixmapItem
+    pixmap_item: PixmapItem
     mode: VRAMMode
     clut_address: int
     raw_data: bytearray
@@ -62,7 +36,7 @@ class VRAMZoomViewer(QGraphicsView):
         scene = QGraphicsScene(self)
         self.setScene(scene)
 
-        self.pixmap_item = VRAMPixmapItem()
+        self.pixmap_item = PixmapItem()
         self.pixmap_item.signals.mouse_click.connect(self.on_mouse_click)
         self.pixmap_item.signals.mouse_moved.connect(self.on_mouse_moved)
         scene.addItem(self.pixmap_item)
@@ -91,15 +65,26 @@ class VRAMZoomViewer(QGraphicsView):
 
         return x
 
+    def set_clut_by_value(self, value: int):
+        clut_value = value * 32
+
+        x = clut_value % BYTES_PER_LINE
+        y = clut_value // BYTES_PER_LINE
+
+        self.set_clut(x, y)
+
+    def set_clut(self, x: int, y: int):
+        self.ui.clut_y.setValue(y)
+        self.ui.clut_x.setValue(x)
+        self.update_clut()
+
     def on_mouse_moved(self, position: QPointF):
         x = self.get_x_from_mode(int(position.x()))
         y = int(position.y())
         self.ui.statusbar.showMessage(f"X:{x} Y:{y}")
 
     def on_mouse_click(self, position: QPointF):
-        self.ui.clut_y.setValue(int(position.y()))
-        self.ui.clut_x.setValue(self.get_x_from_mode(int(position.x())))
-        self.update_clut()
+        self.set_clut(self.get_x_from_mode(int(position.x())), int(position.y()))
 
     def on_clut_changed(self, _: int = 0):
         self.update_clut()

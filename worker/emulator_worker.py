@@ -3,6 +3,7 @@ from PySide6.QtCore import QObject, QTimer, Signal, Slot
 from connector.emulator import Emulator, get_emulator_implementation
 from common import logger
 from game.vram import VRAM_HEIGHT, BYTES_PER_LINE
+from game.frame import Frame
 from game.entity import (
     Entity,
     GAME_ENTITY_ADDRESS,
@@ -18,6 +19,7 @@ class EmulatorWorker(QObject):
     connected = Signal()
     vram_loaded = Signal(bytearray)
     entity_loaded = Signal(Entity)
+    preview_loaded = Signal(Frame)
 
     psx: Emulator
 
@@ -46,6 +48,44 @@ class EmulatorWorker(QObject):
             self.psx.ping()
         except Exception as exception:
             logger.error(exception)
+
+    @Slot(Entity)
+    def load_preview(self, entity: Entity):
+        logger.info(f"Loading preview for entity at 0x{entity.address:08X}...")
+
+        logger.info(f"Frame array: 0x{entity.frame_array:08X}")
+        logger.info(f"Current frame: 0x{entity.current_frame:08X}")
+
+        if entity.frame_array == 0:
+            return
+
+        if entity.current_frame == 0:
+            return
+
+        animation_data = self.psx.read_memory(entity.current_frame, 4)
+        logger.info(f"Animation data: 0x{animation_data.hex()}")
+        animation_index = animation_data[0] * 4
+
+        frame_index_address = entity.frame_array + animation_index
+        logger.info(f"Frame index address: 0x{frame_index_address:08X}")
+        frame_index_data = self.psx.read_memory(frame_index_address, 4)
+        logger.info(f"Frame index data: 0x{frame_index_data.hex()}")
+        frame_index = int.from_bytes(frame_index_data[2:4], byteorder="little")
+        logger.info(f"Frame index: 0x{frame_index:04X}")
+        frame_address = entity.frame_array + frame_index
+        logger.info(f"Frame address: 0x{frame_address:08X}")
+
+        if frame_address == 0:
+            return
+
+        raw_frame = self.psx.read_memory(frame_address, 16)
+        logger.info(f"Frame: 0x{raw_frame.hex()}")
+
+        frame = Frame(raw_frame, entity.vram_page_offset)
+        logger.info(f"{frame}")
+
+        logger.info("Preview loaded")
+        self.preview_loaded.emit(frame)
 
     @Slot()
     def load_entities(self):

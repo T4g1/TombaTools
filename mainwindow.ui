@@ -18,7 +18,7 @@
     <item>
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="tab_entities">
        <attribute name="title">
@@ -30,13 +30,9 @@
         </item>
         <item>
          <widget class="QWidget" name="entity_viewer" native="true">
-          <layout class="QVBoxLayout" name="verticalLayout_2">
+          <layout class="QVBoxLayout" name="entity_viewer_layout">
            <item>
-            <widget class="QLabel" name="entity_sprite">
-             <property name="text">
-              <string/>
-             </property>
-            </widget>
+            <widget class="QGraphicsView" name="entity_preview"/>
            </item>
            <item>
             <spacer name="verticalSpacer">

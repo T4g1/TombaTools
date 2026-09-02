@@ -4,6 +4,9 @@ from dataclasses import dataclass
 
 VRAM_HEIGHT = 512
 BYTES_PER_LINE = 2048
+PAGE_WIDTH = 256
+PAGE_HEIGHT = 256
+PAGES_PER_LINE = 16
 
 COLOR_SIZE = 2
 
@@ -49,8 +52,8 @@ def get_from_16bit_color(value: int, inverted: bool = False) -> Pixel:
     return Pixel(red, green, blue, alpha)
 
 
-def get_clut_value(data: bytearray, address: int, index: int) -> Pixel:
-    clut_value_index = address + index * COLOR_SIZE
+def get_clut_value(data: bytearray, clut_address: int, color_index: int) -> Pixel:
+    clut_value_index = clut_address + color_index * COLOR_SIZE
     value = int.from_bytes(
         data[clut_value_index : clut_value_index + COLOR_SIZE], byteorder="little"
     )

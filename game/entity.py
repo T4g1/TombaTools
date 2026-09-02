@@ -13,47 +13,6 @@ EVENT_CHAR_COUNT = 0x2D
 class Entity:
     SIZE = 0xD4
 
-    address: int
-
-    occupied: int
-    initialized: int
-    param_1: int
-    param_2: int
-    status: int
-    step: int
-    type: int
-    ttl: int
-
-    clut: int
-
-    raw: bytearray
-
-    linked_entity: bytearray
-
-    position_x: int
-    position_y: int
-    position_z: int
-
-    translation_x: int
-    translation_y: int
-    translation_z: int
-
-    rotation_x: int
-    rotation_y: int
-    rotation_z: int
-
-    target_x: int
-    target_y: int
-
-    flags: bytearray
-
-    texture_x_start: int
-    texture_y_start: int
-    texture_x_end: int
-    texture_y_end: int
-
-    addr_bc: int
-
     def __init__(self, address: int):
         self.address = address
 
@@ -66,6 +25,9 @@ class Entity:
         self.step = 0x00
         self.type = 0x00
         self.ttl = 0x00
+
+        self.current_frame = 0x00
+        self.frame_array = 0x00
 
         self.clut = 0x00
 
@@ -101,11 +63,19 @@ class Entity:
         self.step = raw[5]
         self.clut = read_int(raw, 0x08, TypeSize.HALF_WORD)
         self.flags = raw[0x0C:0x10]
-        self.ttl = read_int(raw, 0x20, TypeSize.WORD)
 
         self.position_x = read_int(raw, 0x10, TypeSize.WORD)
         self.position_y = read_int(raw, 0x14, TypeSize.WORD)
         self.position_z = read_int(raw, 0x18, TypeSize.WORD)
+
+        self.vram_page_offset = read_int(
+            raw, 0x1E, TypeSize.HALF_WORD, byteorder="little"
+        )
+
+        self.ttl = read_int(raw, 0x20, TypeSize.WORD)
+
+        self.current_frame = read_int(raw, 0x24, TypeSize.WORD)
+        self.frame_array = read_int(raw, 0x3C, TypeSize.WORD)
 
         self.rotation_x = read_int(raw, 0x84, TypeSize.HALF_WORD)
         self.rotation_y = read_int(raw, 0x88, TypeSize.HALF_WORD)
@@ -152,7 +122,12 @@ class Entity:
         data = write_int(data, 0x14, TypeSize.WORD, self.position_y)
         data = write_int(data, 0x18, TypeSize.WORD, self.position_z)
 
+        data = write_int(data, 0x1E, TypeSize.WORD, self.vram_page_offset)
+
         data = write_int(data, 0x20, TypeSize.WORD, self.ttl)
+
+        data = write_int(data, 0x24, TypeSize.WORD, self.current_frame)
+        data = write_int(data, 0x3C, TypeSize.WORD, self.frame_array)
 
         data = write_int(data, 0x40, TypeSize.WORD, self.address + 0x10)
         data = write_int(data, 0x44, TypeSize.WORD, self.address + 0x18)

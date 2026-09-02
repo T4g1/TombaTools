@@ -5,7 +5,7 @@ from enum import IntEnum
 from game.entity import Entity
 
 
-class Columns(IntEnum):
+class EntityColumns(IntEnum):
     ACTIVE = 0
     PARAM_1 = 1
     PARAM_2 = 2
@@ -18,22 +18,24 @@ class Columns(IntEnum):
     TEXT_Y_END = 9
     RAW = 10
     ADDRESS = 11
+    SPRITE_ADDRESS = 12
 
 
 class EntityTableModel(QtCore.QAbstractTableModel):
     COLUMNS = {
-        Columns.ACTIVE: "Active",
-        Columns.INITIALIZED: "Initialized",
-        Columns.PARAM_1: "Param 1",
-        Columns.PARAM_2: "Param 2",
-        Columns.STATUS: "Status",
-        Columns.TEXT_X_START: "Texture X start",
-        Columns.TEXT_X_END: "Texture X end",
-        Columns.TEXT_Y_START: "Texture Y start",
-        Columns.TEXT_Y_END: "Texture Y end",
-        Columns.RAW: "Raw",
-        Columns.CLUT: "CLUT",
-        Columns.ADDRESS: "Address",
+        EntityColumns.ACTIVE: "Active",
+        EntityColumns.INITIALIZED: "Initialized",
+        EntityColumns.PARAM_1: "Param 1",
+        EntityColumns.PARAM_2: "Param 2",
+        EntityColumns.STATUS: "Status",
+        EntityColumns.TEXT_X_START: "Texture X start",
+        EntityColumns.TEXT_X_END: "Texture X end",
+        EntityColumns.TEXT_Y_START: "Texture Y start",
+        EntityColumns.TEXT_Y_END: "Texture Y end",
+        EntityColumns.RAW: "Raw",
+        EntityColumns.CLUT: "CLUT",
+        EntityColumns.ADDRESS: "Address",
+        EntityColumns.SPRITE_ADDRESS: "Current Frame Address",
     }
 
     entities: list[Entity]
@@ -86,30 +88,32 @@ class EntityTableModel(QtCore.QAbstractTableModel):
                 )
 
         if role == Qt.ItemDataRole.DisplayRole:
-            if index.column() == Columns.ADDRESS:
+            if index.column() == EntityColumns.ADDRESS:
                 return f"0x{entity.address:08X}"
-            if index.column() == Columns.ACTIVE:
+            if index.column() == EntityColumns.ACTIVE:
                 return f"0x{entity.occupied:02X}"
-            elif index.column() == Columns.PARAM_1:
+            elif index.column() == EntityColumns.PARAM_1:
                 return f"0x{entity.param_1:02X}"
-            elif index.column() == Columns.PARAM_2:
+            elif index.column() == EntityColumns.PARAM_2:
                 return f"0x{entity.param_2:02X}"
-            elif index.column() == Columns.INITIALIZED:
+            elif index.column() == EntityColumns.INITIALIZED:
                 return f"0x{entity.initialized:02X}"
-            elif index.column() == Columns.STATUS:
+            elif index.column() == EntityColumns.STATUS:
                 return f"0x{entity.status:02X}"
-            elif index.column() == Columns.RAW:
+            elif index.column() == EntityColumns.RAW:
                 return entity.raw.hex()
-            elif index.column() == Columns.TEXT_X_START:
+            elif index.column() == EntityColumns.TEXT_X_START:
                 return f"0x{entity.texture_x_start:08X}"
-            elif index.column() == Columns.TEXT_Y_START:
+            elif index.column() == EntityColumns.TEXT_Y_START:
                 return f"0x{entity.texture_y_start:08X}"
-            elif index.column() == Columns.TEXT_X_END:
+            elif index.column() == EntityColumns.TEXT_X_END:
                 return f"0x{entity.texture_x_end:08X}"
-            elif index.column() == Columns.TEXT_Y_END:
+            elif index.column() == EntityColumns.TEXT_Y_END:
                 return f"0x{entity.texture_y_end:08X}"
-            elif index.column() == Columns.CLUT:
+            elif index.column() == EntityColumns.CLUT:
                 return f"0x{entity.clut:04X}"
+            elif index.column() == EntityColumns.SPRITE_ADDRESS:
+                return f"0x{entity.current_frame:08X}"
 
         if role == Qt.ItemDataRole.UserRole:
             return entity

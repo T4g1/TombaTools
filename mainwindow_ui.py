@@ -44,6 +44,7 @@ from PySide6.QtGui import (
 from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
+    QGraphicsView,
     QHBoxLayout,
     QHeaderView,
     QLabel,
@@ -88,18 +89,18 @@ class Ui_MainWindow(object):
 
         self.entity_viewer = QWidget(self.tab_entities)
         self.entity_viewer.setObjectName("entity_viewer")
-        self.verticalLayout_2 = QVBoxLayout(self.entity_viewer)
-        self.verticalLayout_2.setObjectName("verticalLayout_2")
-        self.entity_sprite = QLabel(self.entity_viewer)
-        self.entity_sprite.setObjectName("entity_sprite")
+        self.entity_viewer_layout = QVBoxLayout(self.entity_viewer)
+        self.entity_viewer_layout.setObjectName("entity_viewer_layout")
+        self.entity_preview = QGraphicsView(self.entity_viewer)
+        self.entity_preview.setObjectName("entity_preview")
 
-        self.verticalLayout_2.addWidget(self.entity_sprite)
+        self.entity_viewer_layout.addWidget(self.entity_preview)
 
         self.verticalSpacer = QSpacerItem(
             20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding
         )
 
-        self.verticalLayout_2.addItem(self.verticalSpacer)
+        self.entity_viewer_layout.addItem(self.verticalSpacer)
 
         self.horizontalLayout.addWidget(self.entity_viewer)
 
@@ -195,7 +196,7 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
 
-        self.tabWidget.setCurrentIndex(1)
+        self.tabWidget.setCurrentIndex(0)
 
         QMetaObject.connectSlotsByName(MainWindow)
 
@@ -209,7 +210,6 @@ class Ui_MainWindow(object):
             QCoreApplication.translate("MainWindow", "Connect", None)
         )
         self.actionQuit.setText(QCoreApplication.translate("MainWindow", "Quit", None))
-        self.entity_sprite.setText("")
         self.tabWidget.setTabText(
             self.tabWidget.indexOf(self.tab_entities),
             QCoreApplication.translate("MainWindow", "Entities", None),
