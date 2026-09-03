@@ -93,6 +93,25 @@ class Ui_MainWindow(object):
         self.entity_viewer_layout.setObjectName("entity_viewer_layout")
         self.entity_preview = QGraphicsView(self.entity_viewer)
         self.entity_preview.setObjectName("entity_preview")
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(
+            self.entity_preview.sizePolicy().hasHeightForWidth()
+        )
+        self.entity_preview.setSizePolicy(sizePolicy)
+        self.entity_preview.setMouseTracking(True)
+        self.entity_preview.setAutoFillBackground(True)
+        brush = QBrush(QColor(125, 125, 125, 255))
+        brush.setStyle(Qt.BrushStyle.Dense2Pattern)
+        self.entity_preview.setBackgroundBrush(brush)
+        self.entity_preview.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
+        self.entity_preview.setTransformationAnchor(
+            QGraphicsView.ViewportAnchor.AnchorUnderMouse
+        )
+        self.entity_preview.setResizeAnchor(
+            QGraphicsView.ViewportAnchor.AnchorUnderMouse
+        )
 
         self.entity_viewer_layout.addWidget(self.entity_preview)
 

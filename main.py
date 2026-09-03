@@ -2,31 +2,22 @@ import sys
 import asyncio
 import logging
 from PySide6 import QtWidgets
-from PySide6.QtWidgets import (
-    QGraphicsScene,
-)
-from PySide6.QtGui import QImage, QPixmap
+from PySide6.QtWidgets import QGraphicsScene
+from PySide6.QtGui import QPixmap
 from PySide6.QtCore import QThreadPool, QThread, Signal, QItemSelection
 from qasync import QEventLoop
 
 from mainwindow_ui import Ui_MainWindow
 
-from common import GuiLogger, logger
+from common import GuiLogger, logger, wheel_zoom
+from pixmap_builder import build_preview
 from game.entity import Entity
 from game.frame import Frame
-from game.vram import (
-    BYTES_PER_LINE,
-    Pixel,
-    get_clut_value,
-    PAGES_PER_LINE,
-    PAGE_HEIGHT,
-    PAGE_WIDTH,
-)
 from worker import AbstractWorker
 from worker.emulator_worker import EmulatorWorker
-from model.entity_table_model import EntityTableModel, EntityColumns
-from model.vram_zoom_viewer import VRAMZoomViewer
-from model.pixmap_item import PixmapItem
+from widgets.entity_table_model import EntityTableModel, EntityColumns
+from widgets.vram_zoom_viewer import VRAMZoomViewer
+from widgets.pixmap_item import PixmapItem
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -35,6 +26,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     vram_zoom_viewer: VRAMZoomViewer
     entity_preview: PixmapItem
+    pixmap_preview: QPixmap | None = None
 
     threadpool: QThreadPool
     workers: list[AbstractWorker]
@@ -73,6 +65,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.entity_preview = PixmapItem()
         scene.addItem(self.entity_preview)
         self.ui.entity_preview.setScene(scene)
+        self.ui.entity_preview.wheelEvent = lambda event: wheel_zoom(
+            self.ui.entity_preview, event
+        )
 
         self.vram_zoom_viewer = VRAMZoomViewer(self.ui)
         vram_layout = self.ui.tab_vram.layout()
@@ -87,7 +82,8 @@ class MainWindow(QtWidgets.QMainWindow):
         self.psx.connected.connect(self.on_psx_connected)
         self.psx.vram_loaded.connect(self.vram_zoom_viewer.on_vram_loaded)
         self.psx.entity_loaded.connect(self.on_entity_loaded)
-        self.psx.preview_loaded.connect(self.on_preview_loaded)
+        self.psx.preview_clear.connect(self.on_preview_clear)
+        self.psx.preview_frames.connect(self.on_preview_frames)
         self.psx.moveToThread(self.psx_thread)
 
         self.load_vram.connect(self.psx.load_vram)
@@ -150,49 +146,15 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.vram_zoom_viewer.set_clut_by_value(entity.clut)
 
-    def on_preview_loaded(self, frame: Frame):
-        def add_pixel(pixels: bytearray, pixel: Pixel) -> bytearray:
-            # TODO: Handle alpha channel
-            pixel.a = 255
-            pixels += pixel.r.to_bytes()
-            pixels += pixel.g.to_bytes()
-            pixels += pixel.b.to_bytes()
-            pixels += pixel.a.to_bytes()
-            return pixels
+    def on_preview_clear(self):
+        self.pixmap_preview = None
+        self.entity_preview.setPixmap(QPixmap())
+        self.ui.entity_preview.resetTransform()
+        self.ui.entity_preview.centerOn(0, 0)
 
-        bytes_per_pixel = 4
-
-        page_x = frame.vram_page % PAGES_PER_LINE
-        page_y = (frame.vram_page // PAGES_PER_LINE) % 2
-
-        start_x = page_x * PAGE_WIDTH
-        start_y = page_y * PAGE_HEIGHT
-
-        raw_data = self.vram_zoom_viewer.raw_data
-
-        width = frame.bottom_right_x - frame.top_left_x
-        height = frame.bottom_right_y - frame.top_left_y
-
-        pixels: bytearray = bytearray()
-        for y in range(start_y + frame.top_left_y, start_y + frame.bottom_right_y):
-            for x in range(start_x + frame.top_left_x, start_x + frame.bottom_right_x):
-                # Mode: 4bit per pixel
-                index = (y * BYTES_PER_LINE) + x // 2
-                shift = 4 * (x % 2)
-                clut_index = raw_data[index] >> shift & 0x0F
-                pixel = get_clut_value(raw_data, frame.clut, clut_index)
-                pixels = add_pixel(pixels, pixel)
-
-        image = QImage(
-            pixels,
-            width,
-            height,
-            width * bytes_per_pixel,
-            QImage.Format.Format_RGBA8888,
-        )
-
-        pixmap = QPixmap.fromImage(image)
-        self.entity_preview.setPixmap(pixmap)
+    def on_preview_frames(self, frames: list[Frame]):
+        self.pixmap_preview = build_preview(frames, self.vram_zoom_viewer.raw_data)
+        self.entity_preview.setPixmap(self.pixmap_preview)
         self.entity_preview.setScale(2.0)
 
 

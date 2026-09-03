@@ -19,7 +19,8 @@ class EmulatorWorker(QObject):
     connected = Signal()
     vram_loaded = Signal(bytearray)
     entity_loaded = Signal(Entity)
-    preview_loaded = Signal(Frame)
+    preview_clear = Signal()
+    preview_frames = Signal(list)
 
     psx: Emulator
 
@@ -53,6 +54,8 @@ class EmulatorWorker(QObject):
     def load_preview(self, entity: Entity):
         logger.info(f"Loading preview for entity at 0x{entity.address:08X}...")
 
+        self.preview_clear.emit()
+
         logger.info(f"Frame array: 0x{entity.frame_array:08X}")
         logger.info(f"Current frame: 0x{entity.current_frame:08X}")
 
@@ -70,22 +73,31 @@ class EmulatorWorker(QObject):
         logger.info(f"Frame index address: 0x{frame_index_address:08X}")
         frame_index_data = self.psx.read_memory(frame_index_address, 4)
         logger.info(f"Frame index data: 0x{frame_index_data.hex()}")
+        frame_count = int.from_bytes(frame_index_data[0:2], byteorder="little")
         frame_index = int.from_bytes(frame_index_data[2:4], byteorder="little")
+        logger.info(f"Frame count: {frame_count}")
         logger.info(f"Frame index: 0x{frame_index:04X}")
-        frame_address = entity.frame_array + frame_index
-        logger.info(f"Frame address: 0x{frame_address:08X}")
 
-        if frame_address == 0:
-            return
+        frames: list[Frame] = []
+        for i in range(frame_count):
+            frame_address = entity.frame_array + frame_index + (0x10 * i)
+            logger.info(f"Frame {i} address: 0x{frame_address:08X}")
 
-        raw_frame = self.psx.read_memory(frame_address, 16)
-        logger.info(f"Frame: 0x{raw_frame.hex()}")
+            if frame_address == 0:
+                return
 
-        frame = Frame(raw_frame, entity.vram_page_offset)
-        logger.info(f"{frame}")
+            raw_frame = self.psx.read_memory(frame_address, 16)
+            logger.info(f"Frame: 0x{raw_frame.hex()}")
+
+            logger.info(f"Entity VRAM page offset: {entity.vram_page_offset}")
+            frame = Frame(raw_frame, entity.vram_page_offset)
+            logger.info(f"{frame}")
+
+            frames.append(frame)
+
+        self.preview_frames.emit(frames)
 
         logger.info("Preview loaded")
-        self.preview_loaded.emit(frame)
 
     @Slot()
     def load_entities(self):
@@ -93,7 +105,7 @@ class EmulatorWorker(QObject):
         self.load_game_entities()
         self.load_event_cube()
         self.load_object_slots()
-        logger.info("Finished loading entities")
+        logger.info("Finished loading entitiePs")
 
     def _load_entities(
         self,

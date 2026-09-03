@@ -3,8 +3,9 @@ from PySide6.QtWidgets import (
     QGraphicsScene,
 )
 from PySide6.QtCore import Qt, QPointF
-from PySide6.QtGui import QImage, QPixmap
+from PySide6.QtGui import QImage, QPixmap, QBrush, QColor
 
+from common import wheel_zoom
 from game.vram import (
     VRAM_HEIGHT,
     BYTES_PER_LINE,
@@ -12,9 +13,9 @@ from game.vram import (
     get_clut_value,
     get_from_16bit_color,
     VRAMMode,
-    Pixel,
 )
-from model.pixmap_item import PixmapItem
+from pixmap_builder import add_pixel, BYTES_PER_PIXEL
+from widgets.pixmap_item import PixmapItem
 from mainwindow_ui import Ui_MainWindow
 
 
@@ -32,6 +33,11 @@ class VRAMZoomViewer(QGraphicsView):
         self.mode = VRAMMode.DIRECT_COLOR
         self.clut_address = 0
         self.raw_data = bytearray()
+
+        self.setAutoFillBackground(True)
+        brush = QBrush(QColor(125, 125, 125, 255))
+        brush.setStyle(Qt.BrushStyle.Dense2Pattern)
+        self.setBackgroundBrush(brush)
 
         scene = QGraphicsScene(self)
         self.setScene(scene)
@@ -54,6 +60,8 @@ class VRAMZoomViewer(QGraphicsView):
         self.ui.mode.currentIndexChanged.connect(self.on_mode_changed)
         self.ui.clut_x.valueChanged.connect(self.on_clut_changed)
         self.ui.clut_y.valueChanged.connect(self.on_clut_changed)
+
+        self.wheelEvent = lambda event: wheel_zoom(self, event)
 
     def get_x_from_mode(self, x: int) -> int:
         if self.mode is VRAMMode.DIRECT_COLOR:
@@ -93,6 +101,9 @@ class VRAMZoomViewer(QGraphicsView):
         self.mode = VRAMMode(mode)
         self.vram_refresh()
 
+        self.resetTransform()
+        self.centerOn(0, 0)
+
     def update_clut(self):
         x = self.ui.clut_x.value()
         y = self.ui.clut_y.value()
@@ -101,17 +112,6 @@ class VRAMZoomViewer(QGraphicsView):
         self.vram_refresh()
 
     def vram_refresh(self):
-        def add_pixel(pixels: bytearray, pixel: Pixel) -> bytearray:
-            # TODO: Handle alpha channel
-            pixel.a = 255
-            pixels += pixel.r.to_bytes()
-            pixels += pixel.g.to_bytes()
-            pixels += pixel.b.to_bytes()
-            pixels += pixel.a.to_bytes()
-            return pixels
-
-        bytes_per_pixel = 4
-
         width = 1024
         if self.mode is VRAMMode.CLUT_256:
             width = 2048
@@ -147,7 +147,7 @@ class VRAMZoomViewer(QGraphicsView):
             pixels,
             width,
             VRAM_HEIGHT,
-            width * bytes_per_pixel,
+            width * BYTES_PER_PIXEL,
             QImage.Format.Format_RGBA8888,
         )
 
@@ -157,16 +157,3 @@ class VRAMZoomViewer(QGraphicsView):
     def on_vram_loaded(self, data: bytearray):
         self.raw_data = data
         self.vram_refresh()
-
-    def wheelEvent(self, event):
-        """Zooms into the image based on mouse wheel movement."""
-        zoom_factor = 1.15
-
-        if event.angleDelta().y() > 0:
-            # Zoom In
-            self.scale(zoom_factor, zoom_factor)
-        elif event.angleDelta().y() < 0:
-            # Zoom Out
-            self.scale(1.0 / zoom_factor, 1.0 / zoom_factor)
-
-        event.accept()

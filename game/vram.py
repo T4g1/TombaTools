@@ -25,29 +25,21 @@ class Pixel:
     a: int = 255
 
 
-@dataclass
-class Pixels:
-    data: list[Pixel]
-    width: int
-    height: int = VRAM_HEIGHT
-
-
-def get_from_16bit_color(value: int, inverted: bool = False) -> Pixel:
+def get_from_16bit_color(value: int) -> Pixel:
     """Two bytes of data"""
     red = (value >> 0) & 0x1F
     green = (value >> 5) & 0x1F
     blue = (value >> 10) & 0x1F
     alpha = (value >> 15) & 0x01
 
-    red = (red * 255) // 31
-    green = (green * 255) // 31
-    blue = (blue * 255) // 31
-    alpha = (1 - alpha) * 255
+    red = (red * 4) if red <= 15 else 64 + ((red - 16) * 12)
+    green = (green * 4) if green <= 15 else 64 + ((green - 16) * 12)
+    blue = (blue * 4) if blue <= 15 else 64 + ((blue - 16) * 12)
+    alpha = 128 if alpha else 255
 
-    if inverted:
-        red = 255 - red
-        green = 255 - green
-        blue = 255 - blue
+    if value == 0:
+        # Prevents Pixmap from missing it
+        alpha = 1
 
     return Pixel(red, green, blue, alpha)
 

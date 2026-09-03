@@ -32,7 +32,38 @@
          <widget class="QWidget" name="entity_viewer" native="true">
           <layout class="QVBoxLayout" name="entity_viewer_layout">
            <item>
-            <widget class="QGraphicsView" name="entity_preview"/>
+            <widget class="QGraphicsView" name="entity_preview">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="mouseTracking">
+              <bool>true</bool>
+             </property>
+             <property name="autoFillBackground">
+              <bool>true</bool>
+             </property>
+             <property name="backgroundBrush">
+              <brush brushstyle="Dense2Pattern">
+               <color alpha="255">
+                <red>125</red>
+                <green>125</green>
+                <blue>125</blue>
+               </color>
+              </brush>
+             </property>
+             <property name="dragMode">
+              <enum>QGraphicsView::DragMode::ScrollHandDrag</enum>
+             </property>
+             <property name="transformationAnchor">
+              <enum>QGraphicsView::ViewportAnchor::AnchorUnderMouse</enum>
+             </property>
+             <property name="resizeAnchor">
+              <enum>QGraphicsView::ViewportAnchor::AnchorUnderMouse</enum>
+             </property>
+            </widget>
            </item>
            <item>
             <spacer name="verticalSpacer">
