@@ -44,7 +44,6 @@ from PySide6.QtGui import (
 from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
-    QGraphicsView,
     QHBoxLayout,
     QHeaderView,
     QLabel,
@@ -52,7 +51,6 @@ from PySide6.QtWidgets import (
     QMenu,
     QMenuBar,
     QSizePolicy,
-    QSpacerItem,
     QSpinBox,
     QStatusBar,
     QTabWidget,
@@ -84,42 +82,24 @@ class Ui_MainWindow(object):
         self.horizontalLayout.setObjectName("horizontalLayout")
         self.entitiesTableView = QTableView(self.tab_entities)
         self.entitiesTableView.setObjectName("entitiesTableView")
+        self.entitiesTableView.setContextMenuPolicy(
+            Qt.ContextMenuPolicy.CustomContextMenu
+        )
+        self.entitiesTableView.setSortingEnabled(True)
 
         self.horizontalLayout.addWidget(self.entitiesTableView)
 
         self.entity_viewer = QWidget(self.tab_entities)
         self.entity_viewer.setObjectName("entity_viewer")
-        self.entity_viewer_layout = QVBoxLayout(self.entity_viewer)
-        self.entity_viewer_layout.setObjectName("entity_viewer_layout")
-        self.entity_preview = QGraphicsView(self.entity_viewer)
-        self.entity_preview.setObjectName("entity_preview")
-        sizePolicy = QSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Minimum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(
-            self.entity_preview.sizePolicy().hasHeightForWidth()
+            self.entity_viewer.sizePolicy().hasHeightForWidth()
         )
-        self.entity_preview.setSizePolicy(sizePolicy)
-        self.entity_preview.setMouseTracking(True)
-        self.entity_preview.setAutoFillBackground(True)
-        brush = QBrush(QColor(125, 125, 125, 255))
-        brush.setStyle(Qt.BrushStyle.Dense2Pattern)
-        self.entity_preview.setBackgroundBrush(brush)
-        self.entity_preview.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
-        self.entity_preview.setTransformationAnchor(
-            QGraphicsView.ViewportAnchor.AnchorUnderMouse
-        )
-        self.entity_preview.setResizeAnchor(
-            QGraphicsView.ViewportAnchor.AnchorUnderMouse
-        )
-
-        self.entity_viewer_layout.addWidget(self.entity_preview)
-
-        self.verticalSpacer = QSpacerItem(
-            20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding
-        )
-
-        self.entity_viewer_layout.addItem(self.verticalSpacer)
+        self.entity_viewer.setSizePolicy(sizePolicy)
+        self.entity_viewer_layout = QVBoxLayout(self.entity_viewer)
+        self.entity_viewer_layout.setObjectName("entity_viewer_layout")
 
         self.horizontalLayout.addWidget(self.entity_viewer)
 

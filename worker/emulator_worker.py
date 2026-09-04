@@ -19,7 +19,7 @@ class EmulatorWorker(QObject):
     connected = Signal()
     vram_loaded = Signal(bytearray)
     entity_loaded = Signal(Entity)
-    preview_clear = Signal()
+    entity_refreshed = Signal(Entity)
     preview_frames = Signal(list)
 
     psx: Emulator
@@ -53,8 +53,6 @@ class EmulatorWorker(QObject):
     @Slot(Entity)
     def load_preview(self, entity: Entity):
         logger.info(f"Loading preview for entity at 0x{entity.address:08X}...")
-
-        self.preview_clear.emit()
 
         logger.info(f"Frame array: 0x{entity.frame_array:08X}")
         logger.info(f"Current frame: 0x{entity.current_frame:08X}")
@@ -107,27 +105,31 @@ class EmulatorWorker(QObject):
         self.load_object_slots()
         logger.info("Finished loading entitiePs")
 
+    @Slot(Entity)
+    def refresh_entity(self, entity: Entity):
+        entity = self.load_entity(entity.address, Entity.SIZE)
+        self.entity_refreshed.emit(entity)
+
     def _load_entities(
         self,
         address: int,
         count: int,
-        type: int | None = None,
         size: int = Entity.SIZE,
-        is_occupied: bool | None = None,
     ) -> list[Entity]:
         entities = []
         for _ in range(count):
+            entity = self.load_entity(address, size)
+            self.entity_loaded.emit(entity)
             address = address + size
-            entity_raw = self.psx.read_memory_block(address, size)
-            entity = Entity(address)
-            entity.load(entity_raw)
-
-            if (entity.type == type or type is None) and (
-                entity.occupied != 0x00 or not is_occupied or is_occupied is None
-            ):
-                self.entity_loaded.emit(entity)
 
         return entities
+
+    def load_entity(self, address: int, size: int):
+        entity_raw = self.psx.read_memory_block(address, size)
+        entity = Entity(address)
+        entity.load(entity_raw)
+
+        return entity
 
     def load_game_entities(self) -> list[Entity]:
         return self._load_entities(GAME_ENTITY_ADDRESS, GAME_ENTITY_COUNT)

@@ -4,6 +4,7 @@ from PySide6.QtGui import QPainter, QPaintDevice
 from PySide6.QtGui import QImage, QPixmap
 from PySide6.QtCore import Qt
 
+from game.entity import Entity
 from game.frame import Frame
 from game.vram import (
     BYTES_PER_LINE,
@@ -25,7 +26,9 @@ def add_pixel(pixels: bytearray, pixel: Pixel) -> bytearray:
     return pixels
 
 
-def build_preview(frames: list[Frame], vram_data: bytearray):
+def build_preview(
+    frames: list[Frame], vram_data: bytearray, entity: Entity | None = None
+):
     """Build a preview from given frames"""
     # Compute image size
     min_x = 0
@@ -60,6 +63,10 @@ def build_preview(frames: list[Frame], vram_data: bytearray):
         width = frame.bottom_right_x - frame.top_left_x
         height = frame.bottom_right_y - frame.top_left_y
 
+        clut = frame.clut
+        if entity is not None and entity.clut != 0x00:
+            clut = entity.clut
+
         pixels: bytearray = bytearray()
         for y in range(start_y + frame.top_left_y, start_y + frame.bottom_right_y):
             for x in range(start_x + frame.top_left_x, start_x + frame.bottom_right_x):
@@ -67,7 +74,7 @@ def build_preview(frames: list[Frame], vram_data: bytearray):
                 index = (y * BYTES_PER_LINE) + x // 2
                 shift = 4 * (x % 2)
                 clut_index = vram_data[index] >> shift & 0x0F
-                pixel = get_clut_value(vram_data, frame.clut, clut_index)
+                pixel = get_clut_value(vram_data, clut, clut_index)
                 pixels = add_pixel(pixels, pixel)
 
         image = QImage(

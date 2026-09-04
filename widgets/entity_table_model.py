@@ -6,36 +6,32 @@ from game.entity import Entity
 
 
 class EntityColumns(IntEnum):
-    ACTIVE = 0
-    PARAM_1 = 1
-    PARAM_2 = 2
-    INITIALIZED = 3
-    STATUS = 4
-    CLUT = 5
-    TEXT_X_START = 6
-    TEXT_X_END = 7
-    TEXT_Y_START = 8
-    TEXT_Y_END = 9
+    OCCUPIED = 0
+    ACTIVE = 1
+    ADDRESS = 2
+    HANDLER_ID = 3
+    HANDLERS_ARRAY_ID = 4
+    HANDLER = 5
+    CLUT = 6
+    CURRENT_FRAME = 7
+    FRAMES_ARRAY = 8
+    STATUS = 9
     RAW = 10
-    ADDRESS = 11
-    SPRITE_ADDRESS = 12
 
 
 class EntityTableModel(QtCore.QAbstractTableModel):
     COLUMNS = {
+        EntityColumns.OCCUPIED: "Occupied",
         EntityColumns.ACTIVE: "Active",
-        EntityColumns.INITIALIZED: "Initialized",
-        EntityColumns.PARAM_1: "Param 1",
-        EntityColumns.PARAM_2: "Param 2",
-        EntityColumns.STATUS: "Status",
-        EntityColumns.TEXT_X_START: "Texture X start",
-        EntityColumns.TEXT_X_END: "Texture X end",
-        EntityColumns.TEXT_Y_START: "Texture Y start",
-        EntityColumns.TEXT_Y_END: "Texture Y end",
-        EntityColumns.RAW: "Raw",
-        EntityColumns.CLUT: "CLUT",
         EntityColumns.ADDRESS: "Address",
-        EntityColumns.SPRITE_ADDRESS: "Current Frame Address",
+        EntityColumns.HANDLER_ID: "Handler ID",
+        EntityColumns.HANDLERS_ARRAY_ID: "Handlers array ID",
+        EntityColumns.HANDLER: "Handler",
+        EntityColumns.STATUS: "Status",
+        EntityColumns.CLUT: "CLUT",
+        EntityColumns.CURRENT_FRAME: "Frame",
+        EntityColumns.FRAMES_ARRAY: "Frames",
+        EntityColumns.RAW: "Raw",
     }
 
     entities: list[Entity]
@@ -80,47 +76,47 @@ class EntityTableModel(QtCore.QAbstractTableModel):
         entity = self.entities[index.row()]
 
         if role == Qt.ItemDataRole.CheckStateRole:
-            if index.column() == 0:
+            if index.column() == EntityColumns.OCCUPIED:
                 return (
                     Qt.CheckState.Checked
                     if entity.occupied
                     else Qt.CheckState.Unchecked
                 )
+            elif index.column() == EntityColumns.ACTIVE:
+                return (
+                    Qt.CheckState.Checked if entity.active else Qt.CheckState.Unchecked
+                )
 
         if role == Qt.ItemDataRole.DisplayRole:
             if index.column() == EntityColumns.ADDRESS:
                 return f"0x{entity.address:08X}"
-            if index.column() == EntityColumns.ACTIVE:
+            elif index.column() == EntityColumns.ACTIVE:
+                return f"0x{entity.active:02X}"
+            elif index.column() == EntityColumns.OCCUPIED:
                 return f"0x{entity.occupied:02X}"
-            elif index.column() == EntityColumns.PARAM_1:
-                return f"0x{entity.param_1:02X}"
-            elif index.column() == EntityColumns.PARAM_2:
-                return f"0x{entity.param_2:02X}"
-            elif index.column() == EntityColumns.INITIALIZED:
-                return f"0x{entity.initialized:02X}"
+            elif index.column() == EntityColumns.HANDLER_ID:
+                return f"0x{entity.handler_id:02X}"
+            elif index.column() == EntityColumns.HANDLERS_ARRAY_ID:
+                return f"0x{entity.handlers_array_id:02X}"
+            elif index.column() == EntityColumns.HANDLER:
+                return f"0x{entity.get_handler_address():08X}"
             elif index.column() == EntityColumns.STATUS:
                 return f"0x{entity.status:02X}"
             elif index.column() == EntityColumns.RAW:
                 return entity.raw.hex()
-            elif index.column() == EntityColumns.TEXT_X_START:
-                return f"0x{entity.texture_x_start:08X}"
-            elif index.column() == EntityColumns.TEXT_Y_START:
-                return f"0x{entity.texture_y_start:08X}"
-            elif index.column() == EntityColumns.TEXT_X_END:
-                return f"0x{entity.texture_x_end:08X}"
-            elif index.column() == EntityColumns.TEXT_Y_END:
-                return f"0x{entity.texture_y_end:08X}"
             elif index.column() == EntityColumns.CLUT:
                 return f"0x{entity.clut:04X}"
-            elif index.column() == EntityColumns.SPRITE_ADDRESS:
+            elif index.column() == EntityColumns.CURRENT_FRAME:
                 return f"0x{entity.current_frame:08X}"
+            elif index.column() == EntityColumns.FRAMES_ARRAY:
+                return f"0x{entity.frame_array:08X}"
 
         if role == Qt.ItemDataRole.UserRole:
             return entity
 
         return None
 
-    def setData(self, index, value: Entity, role):
+    def setData(self, index, value, role):
         if role == Qt.ItemDataRole.CheckStateRole:
             checked = value == Qt.CheckState.Checked.value
 
@@ -128,8 +124,14 @@ class EntityTableModel(QtCore.QAbstractTableModel):
             if checked:
                 new_value = 0x01
 
-            self.entities[index.row()].occupied = new_value
-            self.entity_updated.emit(self.entities[index.row()])
+            entity = self.entities[index.row()]
+            if index.column() == EntityColumns.ACTIVE:
+                entity.active = new_value
+            elif index.column() == EntityColumns.OCCUPIED:
+                entity.occupied = new_value
+
+            self.entities[index.row()] = entity
+            self.entity_updated.emit(entity)
 
             self.dataChanged.emit(index, index, [role])
             return True
@@ -141,3 +143,31 @@ class EntityTableModel(QtCore.QAbstractTableModel):
             | Qt.ItemFlag.ItemIsEnabled
             | Qt.ItemFlag.ItemIsUserCheckable
         )
+
+    def on_entity_updated(self, entity: Entity):
+        for i in range(len(self.entities)):
+            if self.entities[i].address == entity.address:
+                self.entities[i] = entity
+
+    def sort(self, column: int, order: Qt.SortOrder):
+        self.layoutAboutToBeChanged.emit()
+
+        reverse = order == Qt.SortOrder.DescendingOrder
+
+        mapping = {
+            EntityColumns.ADDRESS: lambda e: e.address,
+            EntityColumns.ACTIVE: lambda e: e.active,
+            EntityColumns.OCCUPIED: lambda e: e.occupied,
+            EntityColumns.HANDLER_ID: lambda e: e.handler_id,
+            EntityColumns.HANDLERS_ARRAY_ID: lambda e: e.handlers_array_id,
+            EntityColumns.HANDLER: lambda e: e.get_handler_address(),
+            EntityColumns.STATUS: lambda e: e.status,
+            EntityColumns.RAW: lambda e: e.raw.hex(),
+            EntityColumns.CLUT: lambda e: e.clut,
+            EntityColumns.CURRENT_FRAME: lambda e: e.current_frame,
+            EntityColumns.FRAMES_ARRAY: lambda e: e.frame_array,
+        }
+
+        self.entities.sort(key=mapping[EntityColumns(column)], reverse=reverse)
+
+        self.layoutChanged.emit()

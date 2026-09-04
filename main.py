@@ -2,22 +2,19 @@ import sys
 import asyncio
 import logging
 from PySide6 import QtWidgets
-from PySide6.QtWidgets import QGraphicsScene
 from PySide6.QtGui import QPixmap
 from PySide6.QtCore import QThreadPool, QThread, Signal, QItemSelection
 from qasync import QEventLoop
 
 from mainwindow_ui import Ui_MainWindow
 
-from common import GuiLogger, logger, wheel_zoom
-from pixmap_builder import build_preview
+from common import GuiLogger, logger
 from game.entity import Entity
-from game.frame import Frame
 from worker import AbstractWorker
 from worker.emulator_worker import EmulatorWorker
-from widgets.entity_table_model import EntityTableModel, EntityColumns
+from widgets.entity_table_model import EntityTableModel
 from widgets.vram_zoom_viewer import VRAMZoomViewer
-from widgets.pixmap_item import PixmapItem
+from widgets.entity_widget import EntityWidget
 
 
 class MainWindow(QtWidgets.QMainWindow):
@@ -25,7 +22,6 @@ class MainWindow(QtWidgets.QMainWindow):
     loop: asyncio.AbstractEventLoop
 
     vram_zoom_viewer: VRAMZoomViewer
-    entity_preview: PixmapItem
     pixmap_preview: QPixmap | None = None
 
     threadpool: QThreadPool
@@ -33,8 +29,7 @@ class MainWindow(QtWidgets.QMainWindow):
 
     load_vram = Signal()
     load_entities = Signal()
-    load_preview = Signal(Entity)
-    update_entity = Signal(Entity)
+    preview_entity = Signal(Entity)
 
     def __init__(self, loop):
         super().__init__()
@@ -54,21 +49,6 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.loop = loop
 
-        self.entity_model = EntityTableModel()
-        self.entity_model.entity_updated.connect(self.on_entity_update)
-        self.ui.entitiesTableView.setModel(self.entity_model)
-        self.ui.entitiesTableView.selectionModel().selectionChanged.connect(
-            self.on_entity_cell_selected
-        )
-
-        scene = QGraphicsScene(self)
-        self.entity_preview = PixmapItem()
-        scene.addItem(self.entity_preview)
-        self.ui.entity_preview.setScene(scene)
-        self.ui.entity_preview.wheelEvent = lambda event: wheel_zoom(
-            self.ui.entity_preview, event
-        )
-
         self.vram_zoom_viewer = VRAMZoomViewer(self.ui)
         vram_layout = self.ui.tab_vram.layout()
         assert vram_layout is not None
@@ -76,20 +56,34 @@ class MainWindow(QtWidgets.QMainWindow):
 
         self.emulator_worker = EmulatorWorker()
 
+        self.entity_widget = EntityWidget(self.vram_zoom_viewer)
+        self.ui.entity_viewer_layout.addWidget(self.entity_widget)
+
         self.psx_thread = QThread()
         self.psx = EmulatorWorker()
         self.psx_thread.started.connect(self.psx.connect)
         self.psx.connected.connect(self.on_psx_connected)
         self.psx.vram_loaded.connect(self.vram_zoom_viewer.on_vram_loaded)
         self.psx.entity_loaded.connect(self.on_entity_loaded)
-        self.psx.preview_clear.connect(self.on_preview_clear)
-        self.psx.preview_frames.connect(self.on_preview_frames)
         self.psx.moveToThread(self.psx_thread)
+
+        self.entity_model = EntityTableModel()
+        self.entity_model.entity_updated.connect(self.psx.update_entity)
+        self.ui.entitiesTableView.setModel(self.entity_model)
+        self.ui.entitiesTableView.selectionModel().selectionChanged.connect(
+            self.on_entity_cell_selected
+        )
+
+        self.entity_widget.update_entity.connect(self.psx.update_entity)
+        self.entity_widget.load_preview.connect(self.psx.load_preview)
+        self.entity_widget.refresh_entity.connect(self.psx.refresh_entity)
+        self.psx.preview_frames.connect(self.entity_widget.on_preview_frames)
+        self.psx.entity_refreshed.connect(self.entity_widget.on_refresh)
+        self.psx.entity_refreshed.connect(self.entity_model.on_entity_updated)
 
         self.load_vram.connect(self.psx.load_vram)
         self.load_entities.connect(self.psx.load_entities)
-        self.load_preview.connect(self.psx.load_preview)
-        self.update_entity.connect(self.psx.update_entity)
+        self.preview_entity.connect(self.entity_widget.on_preview_entity)
 
     def on_action_connect(self):
         if not self.psx_thread.isRunning():
@@ -127,9 +121,6 @@ class MainWindow(QtWidgets.QMainWindow):
     def start_load_entities(self):
         self.load_entities.emit()
 
-    def on_entity_update(self, entity: Entity):
-        self.update_entity.emit(entity)
-
     def on_entity_cell_selected(self, selected: QItemSelection, _: QItemSelection):
         new_indexes = selected.indexes()
 
@@ -139,23 +130,7 @@ class MainWindow(QtWidgets.QMainWindow):
         index = new_indexes[0]
 
         entity = self.entity_model.entities[index.row()]
-        self.load_preview.emit(entity)
-
-        if index.column() != EntityColumns.CLUT:
-            return
-
-        self.vram_zoom_viewer.set_clut_by_value(entity.clut)
-
-    def on_preview_clear(self):
-        self.pixmap_preview = None
-        self.entity_preview.setPixmap(QPixmap())
-        self.ui.entity_preview.resetTransform()
-        self.ui.entity_preview.centerOn(0, 0)
-
-    def on_preview_frames(self, frames: list[Frame]):
-        self.pixmap_preview = build_preview(frames, self.vram_zoom_viewer.raw_data)
-        self.entity_preview.setPixmap(self.pixmap_preview)
-        self.entity_preview.setScale(2.0)
+        self.preview_entity.emit(entity)
 
 
 def main():

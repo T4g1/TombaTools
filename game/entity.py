@@ -9,64 +9,38 @@ OBJECT_SLOTS_COUNT = 0x2D
 EVENT_CHAR_ADDRESS = 0x0B0B88
 EVENT_CHAR_COUNT = 0x2D
 
+ENTITY_HANDLERS_BASE_ADDRESS = {
+    0x02: 0x800772BC,
+    0x03: 0x8007C6B0,
+    0x04: 0x8007D30C,
+    0x05: 0x8007E8A8,
+}
+
 
 class Entity:
     SIZE = 0xD4
 
     def __init__(self, address: int):
         self.address = address
-
-        self.initialized = 0x00
-
-        self.occupied = 0x00
-        self.param_1 = 0x00
-        self.param_2 = 0x00
-        self.status = 0x00
-        self.step = 0x00
-        self.type = 0x00
-        self.ttl = 0x00
-
-        self.current_frame = 0x00
-        self.frame_array = 0x00
-
-        self.clut = 0x00
-
-        self.position_x = 0x00
-        self.position_y = 0x00
-        self.position_z = 0x00
-
-        self.rotation_x = 0x00
-        self.rotation_y = 0x00
-        self.rotation_z = 0x00
-
-        self.target_x = 0x00
-        self.target_y = 0x00
-
-        self.texture_x_start = 0x00
-        self.texture_y_start = 0x00
-        self.texture_x_end = 0x00
-        self.texture_y_end = 0x00
-
-        self.addr_bc = 0x00
-
-        self.flags = bytearray(4)
-        self.linked_entity = bytearray(4)
+        self.load(bytearray(Entity.SIZE))
 
     def load(self, raw: bytearray):
         self.raw = raw.copy()
 
         self.occupied = raw[0]
-        self.initialized = raw[1]
-        self.param_1 = raw[2]
+        self.active = raw[1]
+        self.handler_id = raw[2]
         self.param_2 = raw[3]
         self.status = raw[4]
         self.step = raw[5]
-        self.clut = read_int(raw, 0x08, TypeSize.HALF_WORD)
+        self.clut = read_int(raw, 0x08, TypeSize.HALF_WORD) * 32
         self.flags = raw[0x0C:0x10]
 
-        self.position_x = read_int(raw, 0x10, TypeSize.WORD)
-        self.position_y = read_int(raw, 0x14, TypeSize.WORD)
-        self.position_z = read_int(raw, 0x18, TypeSize.WORD)
+        self.position_x = read_int(raw, 0x12, TypeSize.HALF_WORD, signed=True)
+        self.position_y = read_int(raw, 0x16, TypeSize.HALF_WORD, signed=True)
+        self.position_z = read_int(raw, 0x1C, TypeSize.HALF_WORD, signed=True)
+
+        self.handlers_array_id = raw[0x1C]
 
         self.vram_page_offset = read_int(
             raw, 0x1E, TypeSize.HALF_WORD, byteorder="little"
@@ -95,7 +69,7 @@ class Entity:
 
     def __str__(self):
         value = f"{hex(self.address)} - Occupied: {hex(self.occupied)}, "
-        value += f"Param 1: {hex(self.param_1)}, "
+        value += f"Param 1: {hex(self.handler_id)}, "
         value += f"Param 2: {hex(self.param_2)}, "
         value += f"Status: {hex(self.status)}, "
         value += f"CLUT: {hex(self.clut)}, "
@@ -103,24 +77,24 @@ class Entity:
         value += f"Flags: {self.flags.hex()}, "
         value += f"BC: 0x{self.addr_bc:04X}, "
         value += f"Position: {hex(self.position_x)}, {hex(self.position_y)}, "
-        # value += f"Linked to: {reverse(self.linked_entity.hex())}, "
         value += f"Texture: 0x{self.texture_x_start:04X}, 0x{self.texture_y_start:04X}, 0x{self.texture_x_end:04X}, 0x{self.texture_y_end:04X}, "
-        # value += f"{self.raw.hex()}"
         return value
 
     def to_bytearray(self) -> bytearray:
         data = self.raw
         data[0x00] = self.occupied
-        data[0x01] = self.initialized
-        data[0x02] = self.param_1
+        data[0x01] = self.active
+        data[0x02] = self.handler_id
         data[0x03] = self.param_2
         data[0x04] = self.status
         data[0x05] = self.step
         data = write_int(data, 0x08, TypeSize.HALF_WORD, self.clut)
 
-        data = write_int(data, 0x10, TypeSize.WORD, self.position_x)
-        data = write_int(data, 0x14, TypeSize.WORD, self.position_y)
-        data = write_int(data, 0x18, TypeSize.WORD, self.position_z)
+        data = write_int(data, 0x12, TypeSize.HALF_WORD, self.position_x)
+        data = write_int(data, 0x16, TypeSize.HALF_WORD, self.position_y)
+        data = write_int(data, 0x1C, TypeSize.HALF_WORD, self.position_z)
+
+        data[0x1C] = self.handlers_array_id
 
         data = write_int(data, 0x1E, TypeSize.WORD, self.vram_page_offset)
 
@@ -140,3 +114,10 @@ class Entity:
         data = write_int(data, 0xC6, TypeSize.HALF_WORD, self.target_y, signed=True)
 
         return data
+
+    def get_handler_address(self) -> int:
+        base_address = ENTITY_HANDLERS_BASE_ADDRESS.get(self.handlers_array_id, None)
+        if base_address is None:
+            return 0x00
+
+        return base_address + self.handler_id * TypeSize.WORD

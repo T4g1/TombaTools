@@ -12,10 +12,8 @@ class Frame:
         self.clut = read_int(raw, 0x02, TypeSize.HALF_WORD, byteorder="little") * 32
         self.top_right_x = raw[0x04]
         self.top_right_y = raw[0x05]
-        self.vram_page = (
-            read_int(raw, 0x06, TypeSize.HALF_WORD, byteorder="little")
-            + vram_page_offset
-        )
+        self.prout = raw[0x06]
+        self.vram_page = raw[0x06] + vram_page_offset
         self.bottom_left_x = raw[0x08]
         self.bottom_left_y = raw[0x09]
         self.width = raw[0x0A]
